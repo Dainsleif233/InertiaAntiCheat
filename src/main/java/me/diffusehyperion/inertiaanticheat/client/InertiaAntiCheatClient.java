@@ -9,6 +9,8 @@ import net.fabricmc.loader.api.FabricLoader;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -29,6 +31,7 @@ public class InertiaAntiCheatClient implements ClientModInitializer {
     public void setupModlist() {
         try {
             File modDirectory = FabricLoader.getInstance().getGameDir().resolve("mods").toFile();
+            MessageDigest md = MessageDigest.getInstance("MD5");
             for (File modFile : Objects.requireNonNull(modDirectory.listFiles())) {
                 if (modFile.isDirectory()) {
                     continue;
@@ -36,10 +39,19 @@ public class InertiaAntiCheatClient implements ClientModInitializer {
                 if (!modFile.getAbsolutePath().endsWith(".jar")) {
                     continue;
                 }
-                InertiaAntiCheatClient.allModNames.add(modFile.getName());
-                InertiaAntiCheatClient.allModData.add(Files.readAllBytes(modFile.toPath()));
+
+                byte[] fileBytes = Files.readAllBytes(modFile.toPath());
+                byte[] hashBytes = md.digest(fileBytes);
+                StringBuilder sb = new StringBuilder();
+                for (byte b : hashBytes) {
+                    sb.append(String.format("%02x", b & 0xff));
+                }
+                String md5Hash = sb.toString();
+
+                InertiaAntiCheatClient.allModNames.add(md5Hash);
+                InertiaAntiCheatClient.allModData.add(fileBytes);
             }
-        } catch (IOException e) {
+        } catch (IOException | NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         }
     }

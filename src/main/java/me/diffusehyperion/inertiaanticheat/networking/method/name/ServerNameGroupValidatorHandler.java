@@ -3,11 +3,8 @@ package me.diffusehyperion.inertiaanticheat.networking.method.name;
 import me.diffusehyperion.inertiaanticheat.InertiaAntiCheat;
 import me.diffusehyperion.inertiaanticheat.networking.method.name.handlers.NameValidationHandler;
 import me.diffusehyperion.inertiaanticheat.server.InertiaAntiCheatServer;
-import me.diffusehyperion.inertiaanticheat.util.HashAlgorithm;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 public class ServerNameGroupValidatorHandler extends NameValidationHandler {
     public ServerNameGroupValidatorHandler(Runnable failureTask, Runnable successTask, Runnable finishTask) {
@@ -20,7 +17,6 @@ public class ServerNameGroupValidatorHandler extends NameValidationHandler {
         InertiaAntiCheat.debugInfo("Checking modlist now, using group method");
 
         List<String> softWhitelistedMods = InertiaAntiCheatServer.serverConfig.getList("validation.group.softWhitelist");
-        softWhitelistedMods.replaceAll((mod) -> (mod.endsWith(".jar") ? mod : mod + ".jar"));
         InertiaAntiCheat.debugInfo("Soft whitelisted mods: " + String.join(", ", softWhitelistedMods));
 
         List<String> hashes = new ArrayList<>();
@@ -32,14 +28,8 @@ public class ServerNameGroupValidatorHandler extends NameValidationHandler {
                 hashes.add(mod);
             }
         }
-        Collections.sort(hashes);
-        String combinedHash = String.join("|", hashes);
-        String finalHash = InertiaAntiCheat.getHash(combinedHash.getBytes(), HashAlgorithm.MD5); // no need to be cryptographically safe here
-        InertiaAntiCheat.debugInfo("Final hash: " + finalHash);
-        InertiaAntiCheat.debugInfo("Combined hash: " + combinedHash);
-
-
-        boolean success = InertiaAntiCheatServer.serverConfig.getList("validation.group.hash").contains(finalHash);
+        Set<String> hashesSet = new HashSet<>(hashes);
+        boolean success = hashesSet.equals(new HashSet<>(InertiaAntiCheatServer.serverConfig.getList("validation.group.hash")));
         if (success) {
             InertiaAntiCheat.debugInfo("Passed");
         } else {
